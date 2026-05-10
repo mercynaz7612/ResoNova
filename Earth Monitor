@@ -1,2 +1,143 @@
-# ResoNova
-Earth Monitor 
+import React, { useEffect, useMemo, useState } from "react"; import { Activity, Zap, Moon, Radio, ShieldCheck, HeartPulse, RefreshCw, ExternalLink } from "lucide-react"; import { motion } from "framer-motion";
+
+const harmonics = [ { mode: "1st", freq: "7.83 Hz", label: "Fundamental", note: "Earth-ionosphere baseline" }, { mode: "2nd", freq: "14.3 Hz", label: "Second harmonic", note: "Often appears above baseline" }, { mode: "3rd", freq: "20.8 Hz", label: "Third harmonic", note: "Visible during active periods" }, { mode: "4th", freq: "27.3 Hz", label: "Fourth harmonic", note: "Higher-frequency activity" }, { mode: "5th", freq: "33.8 Hz", label: "Fifth harmonic", note: "Usually more subtle" }, ];
+
+const faqs = [ { q: "What is Schumann Resonance?", a: "Schumann resonances are natural electromagnetic standing waves in the cavity between Earth’s surface and the ionosphere. The best-known fundamental band is commonly listed near 7.83 Hz.", }, { q: "Is this medical advice?", a: "No. This dashboard is for educational and personal-interest use only. Claims about health, mood, or symptoms should be treated carefully and discussed with a qualified professional when needed.", }, { q: "What does a spike mean?", a: "A spike can reflect stronger natural activity, local noise, equipment artifacts, lightning, or space-weather conditions. It should not be interpreted from one chart alone.", }, { q: "How often does the page update?", a: "This demo simulates live updates every minute. A production version can connect to NOAA, Tomsk-style spectrogram images, earthquake APIs, and moon-phase APIs.", }, ];
+
+function Sparkline() { const points = useMemo(() => { return Array.from({ length: 42 }, (_, i) => { const base = 38 + Math.sin(i / 3) * 10; const spike = i === 12 || i === 28 ? 24 : 0; const wobble = Math.cos(i / 1.7) * 5; return Math.max(10, Math.min(82, base + spike + wobble)); }); }, []);
+
+const path = points.map((p, i) => ${i === 0 ? "M" : "L"} ${(i / (points.length - 1)) * 100} ${100 - p}).join(" ");
+
+return ( <svg viewBox="0 0 100 100" className="h-28 w-full overflow-visible"> <defs> <linearGradient id="glow" x1="0" x2="1" y1="0" y2="0"> <stop offset="0%" stopColor="#7dd3fc" /> <stop offset="50%" stopColor="#a7f3d0" /> <stop offset="100%" stopColor="#fef08a" /> </linearGradient> </defs> <path d={path} fill="none" stroke="url(#glow)" strokeWidth="3" strokeLinecap="round" /> <path d={${path} L 100 100 L 0 100 Z} fill="url(#glow)" opacity="0.12" /> </svg> ); }
+
+function SpectrogramMock() { const rows = Array.from({ length: 18 }); const cols = Array.from({ length: 44 });
+
+return ( <div className="rounded-2xl border border-cyan-300/20 bg-slate-950 p-3 shadow-2xl shadow-cyan-500/10"> <div className="mb-3 flex items-center justify-between text-xs text-cyan-100/70"> <span>Live spectrogram demo</span> <span>Last 24h · auto-refresh mock</span> </div> <div className="grid gap-1" style={{ gridTemplateRows: repeat(${rows.length}, minmax(0, 1fr)) }}> {rows.map((, r) => ( <div key={r} className="grid gap-1" style={{ gridTemplateColumns: repeat(${cols.length}, minmax(0, 1fr)) }}> {cols.map((, c) => { const harmonic = [3, 7, 11, 14].includes(r); const vertical = [8, 19, 31, 39].includes(c); const active = harmonic || vertical || (r + c) % 17 === 0; const opacity = active ? 0.25 + ((r * c) % 7) / 10 : 0.05; return ( <div key={c} className="h-2 rounded-sm bg-cyan-300" style={{ opacity }} /> ); })} </div> ))} </div> <div className="mt-3 flex justify-between text-[11px] text-cyan-100/50"> <span>00:00 UTC</span> <span>Frequency rises ↑</span> <span>Now</span> </div> </div> ); }
+
+function StatCard({ icon: Icon, label, value, sub }) { return ( <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-white/10 bg-white/10 p-5 shadow-xl backdrop-blur" > <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-300/15 text-cyan-100"> <Icon size={22} /> </div> <p className="text-sm text-cyan-100/70">{label}</p> <p className="mt-1 text-3xl font-semibold tracking-tight text-white">{value}</p> <p className="mt-2 text-sm text-cyan-50/60">{sub}</p> </motion.div> ); }
+
+export default function SchumannResonanceMonitor() { const [updated, setUpdated] = useState(new Date());
+
+useEffect(() => { const t = setInterval(() => setUpdated(new Date()), 60000); return () => clearInterval(t); }, []);
+
+return ( <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,#155e75,transparent_38%),linear-gradient(135deg,#020617,#0f172a_45%,#111827)] text-white"> <section className="mx-auto max-w-7xl px-6 py-8 sm:py-12"> <nav className="flex items-center justify-between"> <div className="flex items-center gap-3"> <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-300/20 shadow-lg shadow-cyan-400/20"> <Radio className="text-cyan-100" size={24} /> </div> <div> <p className="text-lg font-bold tracking-tight">ResoNova Earth Monitor</p> <p className="text-xs text-cyan-100/60">Live Earth Frequency & Resonance Data</p> </div> </div> <a href="#faq" className="rounded-full border border-white/10 px-4 py-2 text-sm text-cyan-50/80 hover:bg-white/10"> FAQ </a> </nav>
+
+<div className="grid items-center gap-10 py-14 lg:grid-cols-[1.05fr_.95fr] lg:py-20">
+      <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+        <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-cyan-200/20 bg-cyan-200/10 px-4 py-2 text-sm text-cyan-50/80">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-75"></span>
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-300"></span>
+          </span>
+          Live-style monitor · updated {updated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+        </div>
+        <h1 className="max-w-3xl text-5xl font-black leading-tight tracking-tight sm:text-6xl lg:text-7xl">
+          ResoNova Earth Monitorn              <span className="block bg-gradient-to-r from-cyan-200 via-emerald-200 to-yellow-100 bg-clip-text text-transparent">n                Live Earth Frequency & Resonance Datan              </span>
+        </h1>
+        <p className="mt-6 max-w-2xl text-lg leading-8 text-cyan-50/75">
+          Real-time Schumann resonance tracking, harmonic analysis, and space-weather monitoring in a clean modern dashboard designed for curious minds and daily visitors.
+        </p>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <a href="#dashboard" className="rounded-full bg-cyan-200 px-6 py-3 font-semibold text-slate-950 shadow-lg shadow-cyan-300/20 hover:bg-cyan-100">
+            View dashboard
+          </a>
+          <a href="#learn" className="rounded-full border border-white/15 px-6 py-3 font-semibold text-cyan-50 hover:bg-white/10">
+            Learn the science
+          </a>
+        </div>
+      </motion.div>
+
+      <div className="rounded-[2rem] border border-white/10 bg-white/10 p-4 shadow-2xl backdrop-blur-xl">
+        <div className="rounded-[1.5rem] bg-slate-950/80 p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm text-cyan-100/60">Current baseline</p>
+              <p className="text-5xl font-black">7.83<span className="text-2xl text-cyan-100/60"> Hz</span></p>
+            </div>
+            <div className="rounded-2xl bg-emerald-300/10 px-4 py-2 text-sm font-semibold text-emerald-100">Calm</div>
+          </div>
+          <Sparkline />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="dashboard" className="mx-auto max-w-7xl px-6 pb-16">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <StatCard icon={Activity} label="Earth energy" value="18 / 100" sub="Composite demo score" />
+      <StatCard icon={Zap} label="Kp Index" value="1.3" sub="Quiet geomagnetic field" />
+      <StatCard icon={HeartPulse} label="Amplitude" value="Low" sub="No major spike detected" />
+      <StatCard icon={Moon} label="Moon phase" value="31%" sub="Waning crescent" />
+    </div>
+
+    <div className="mt-6 grid gap-6 lg:grid-cols-[1.3fr_.7fr]">
+      <SpectrogramMock />
+      <div className="rounded-2xl border border-white/10 bg-white/10 p-6 backdrop-blur">
+        <div className="mb-5 flex items-center gap-3">
+          <RefreshCw className="text-cyan-100" />
+          <div>
+            <h2 className="text-2xl font-bold">Today’s field note</h2>
+            <p className="text-sm text-cyan-100/60">Auto-generated summary placeholder</p>
+          </div>
+        </div>
+        <p className="leading-7 text-cyan-50/75">
+          The field appears generally calm in this demo view. Harmonic bands are visible near the expected reference points, while short vertical streaks may represent momentary broadband activity or local noise.
+        </p>
+        <div className="mt-6 rounded-2xl bg-slate-950/50 p-4 text-sm text-cyan-50/70">
+          Production idea: connect this panel to NOAA space-weather data, earthquake feeds, moon phase APIs, and a live spectrogram image source.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="learn" className="mx-auto max-w-7xl px-6 pb-16">
+    <div className="mb-6 flex items-end justify-between gap-4">
+      <div>
+        <p className="text-sm uppercase tracking-[0.3em] text-cyan-100/50">Reference</p>
+        <h2 className="mt-2 text-4xl font-black">Harmonic modes</h2>
+      </div>
+      <ShieldCheck className="hidden text-cyan-100/70 sm:block" size={42} />
+    </div>
+    <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/10 backdrop-blur">
+      <table className="w-full text-left text-sm">
+        <thead className="bg-slate-950/60 text-cyan-50/70">
+          <tr>
+            <th className="p-4">Mode</th>
+            <th className="p-4">Frequency</th>
+            <th className="p-4">Name</th>
+            <th className="p-4">Note</th>
+          </tr>
+        </thead>
+        <tbody>
+          {harmonics.map((h) => (
+            <tr key={h.mode} className="border-t border-white/10">
+              <td className="p-4 font-semibold">{h.mode}</td>
+              <td className="p-4 text-cyan-100">{h.freq}</td>
+              <td className="p-4">{h.label}</td>
+              <td className="p-4 text-cyan-50/65">{h.note}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="faq" className="mx-auto max-w-5xl px-6 pb-20">
+    <h2 className="text-center text-4xl font-black">Frequently asked questions</h2>
+    <div className="mt-8 grid gap-4">
+      {faqs.map((item) => (
+        <details key={item.q} className="group rounded-2xl border border-white/10 bg-white/10 p-5 backdrop-blur">
+          <summary className="cursor-pointer list-none text-lg font-bold">{item.q}</summary>
+          <p className="mt-3 leading-7 text-cyan-50/70">{item.a}</p>
+        </details>
+      ))}
+    </div>
+  </section>
+
+  <footer className="border-t border-white/10 px-6 py-8 text-center text-sm text-cyan-50/55">
+    <p>© 2026 ResoNova Earth Monitor. Educational use only. Not medical advice.</p>
+    <p className="mt-2 inline-flex items-center gap-1">Built as a customizable website template <ExternalLink size={14} /></p>
+  </footer>
+</main>
+
+); }
